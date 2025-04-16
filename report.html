@@ -1,0 +1,374 @@
+{% extends "layout.html" %}
+
+{% block title %}Scan Report{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>
+            Scan Report: {{ scan.target }}
+        </h1>
+        <div class="btn-group">
+            <a href="{{ url_for('blue_team', scan_id=scan.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-shield-alt me-1"></i> Blue Team View
+            </a>
+            <a href="{{ url_for('red_team', scan_id=scan.id) }}" class="btn btn-outline-danger">
+                <i class="fas fa-user-secret me-1"></i> Red Team View
+            </a>
+            <a href="{{ url_for('select_framework', scan_id=scan.id) }}" class="btn btn-outline-success">
+                <i class="fas fa-clipboard-check me-1"></i> Compliance
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='pdf') }}">Export as PDF</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='csv') }}">Export as CSV</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Information Card -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Scan Information</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Target:</th>
+                        <td>{{ scan.target }}</td>
+                    </tr>
+                    <tr>
+                        <th>Scan Type:</th>
+                        <td>
+                            {% if scan.scan_type == 'website' %}
+                            <span class="badge bg-primary">Website</span>
+                            {% elif scan.scan_type == 'email' %}
+                            <span class="badge bg-success">Email</span>
+                            {% elif scan.scan_type == 'infrastructure' %}
+                            <span class="badge bg-info">Infrastructure</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            {% if scan.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% elif scan.status == 'failed' %}
+                            <span class="badge bg-danger">Failed</span>
+                            {% elif scan.status == 'in_progress' %}
+                            <span class="badge bg-info">In Progress</span>
+                            {% else %}
+                            <span class="badge bg-warning">{{ scan.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Started:</th>
+                        <td>{{ scan.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Completed:</th>
+                        <td>{{ scan.completed_at.strftime('%Y-%m-%d %H:%M:%S') if scan.completed_at else 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Vulnerabilities:</th>
+                        <td>
+                            <span class="badge bg-danger me-1">{{ vulnerabilities_by_severity['critical']|length }} Critical</span>
+                            <span class="badge bg-warning text-dark me-1">{{ vulnerabilities_by_severity['high']|length }} High</span>
+                            <span class="badge bg-info me-1">{{ vulnerabilities_by_severity['medium']|length }} Medium</span>
+                            <span class="badge bg-success">{{ vulnerabilities_by_severity['low']|length }} Low</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vulnerability Summary -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Vulnerability Summary</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div id="vulnerabilitySummaryChart" style="height: 250px;"></div>
+            </div>
+            <div class="col-md-4">
+                <h5>Risk Level</h5>
+                {% set total_vulns = vulnerabilities_by_severity['critical']|length + vulnerabilities_by_severity['high']|length + vulnerabilities_by_severity['medium']|length + vulnerabilities_by_severity['low']|length %}
+                {% set risk_score = (vulnerabilities_by_severity['critical']|length * 10 + vulnerabilities_by_severity['high']|length * 5 + vulnerabilities_by_severity['medium']|length * 2 + vulnerabilities_by_severity['low']|length * 0.5) / total_vulns if total_vulns > 0 else 0 %}
+                
+                {% if risk_score >= 7 %}
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Critical Risk</h4>
+                    <p>Immediate attention required. Exploitation is likely and impact would be severe.</p>
+                </div>
+                {% elif risk_score >= 4 %}
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>High Risk</h4>
+                    <p>Urgent attention needed. Significant vulnerabilities are present.</p>
+                </div>
+                {% elif risk_score >= 2 %}
+                <div class="alert alert-info">
+                    <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Medium Risk</h4>
+                    <p>Important issues to address, but not immediately critical.</p>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Low Risk</h4>
+                    <p>Minor issues detected. Continue to monitor and address when convenient.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vulnerability Details -->
+{% if vulnerabilities_by_severity['critical'] %}
+<div class="card mb-4 border-0 shadow-sm border-left-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0"><i class="fas fa-radiation me-2"></i>Critical Vulnerabilities</h4>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="accordionCritical">
+            {% for vuln in vulnerabilities_by_severity['critical'] %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="critical-heading-{{ loop.index }}">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#critical-collapse-{{ loop.index }}" aria-expanded="{{ 'true' if loop.index == 1 else 'false' }}" aria-controls="critical-collapse-{{ loop.index }}">
+                        {{ vuln.vulnerability_type.replace('_', ' ').title() }}
+                    </button>
+                </h2>
+                <div id="critical-collapse-{{ loop.index }}" class="accordion-collapse collapse {{ 'show' if loop.index == 1 else '' }}" aria-labelledby="critical-heading-{{ loop.index }}" data-bs-parent="#accordionCritical">
+                    <div class="accordion-body">
+                        <div class="mb-3">
+                            <strong>Description:</strong>
+                            <p>{{ vuln.description }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Details:</strong>
+                            <pre class="bg-dark text-white p-3 rounded">{{ vuln.details }}</pre>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-primary mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-shield-alt me-2"></i>Remediation
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ vuln.remediation|safe|replace('\n', '<br>')|truncate(300) }}</p>
+                                        <a href="{{ url_for('blue_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-primary">
+                                            View Full Remediation
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger mb-3">
+                                    <div class="card-header bg-danger text-white">
+                                        <i class="fas fa-user-secret me-2"></i>Exploitation
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ vuln.exploitation|safe|replace('\n', '<br>')|truncate(300) }}</p>
+                                        <a href="{{ url_for('red_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-danger">
+                                            View Exploitation Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if vulnerabilities_by_severity['high'] %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-warning text-dark">
+        <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>High Vulnerabilities</h4>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="accordionHigh">
+            {% for vuln in vulnerabilities_by_severity['high'] %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="high-heading-{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#high-collapse-{{ loop.index }}" aria-expanded="false" aria-controls="high-collapse-{{ loop.index }}">
+                        {{ vuln.vulnerability_type.replace('_', ' ').title() }}
+                    </button>
+                </h2>
+                <div id="high-collapse-{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="high-heading-{{ loop.index }}" data-bs-parent="#accordionHigh">
+                    <div class="accordion-body">
+                        <div class="mb-3">
+                            <strong>Description:</strong>
+                            <p>{{ vuln.description }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Details:</strong>
+                            <pre class="bg-dark text-white p-3 rounded">{{ vuln.details }}</pre>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-primary mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-shield-alt me-2"></i>Remediation
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ vuln.remediation|safe|replace('\n', '<br>')|truncate(300) }}</p>
+                                        <a href="{{ url_for('blue_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-primary">
+                                            View Full Remediation
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger mb-3">
+                                    <div class="card-header bg-danger text-white">
+                                        <i class="fas fa-user-secret me-2"></i>Exploitation
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">{{ vuln.exploitation|safe|replace('\n', '<br>')|truncate(300) }}</p>
+                                        <a href="{{ url_for('red_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-danger">
+                                            View Exploitation Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if vulnerabilities_by_severity['medium'] %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Medium Vulnerabilities</h4>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="accordionMedium">
+            {% for vuln in vulnerabilities_by_severity['medium'] %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="medium-heading-{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#medium-collapse-{{ loop.index }}" aria-expanded="false" aria-controls="medium-collapse-{{ loop.index }}">
+                        {{ vuln.vulnerability_type.replace('_', ' ').title() }}
+                    </button>
+                </h2>
+                <div id="medium-collapse-{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="medium-heading-{{ loop.index }}" data-bs-parent="#accordionMedium">
+                    <div class="accordion-body">
+                        <p><strong>Description:</strong> {{ vuln.description }}</p>
+                        <p><strong>Details:</strong> {{ vuln.details }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('blue_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-shield-alt me-1"></i>View Remediation
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('red_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-user-secret me-1"></i>View Exploitation
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if vulnerabilities_by_severity['low'] %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>Low Vulnerabilities</h4>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="accordionLow">
+            {% for vuln in vulnerabilities_by_severity['low'] %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="low-heading-{{ loop.index }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#low-collapse-{{ loop.index }}" aria-expanded="false" aria-controls="low-collapse-{{ loop.index }}">
+                        {{ vuln.vulnerability_type.replace('_', ' ').title() }}
+                    </button>
+                </h2>
+                <div id="low-collapse-{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="low-heading-{{ loop.index }}" data-bs-parent="#accordionLow">
+                    <div class="accordion-body">
+                        <p><strong>Description:</strong> {{ vuln.description }}</p>
+                        <p><strong>Details:</strong> {{ vuln.details }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('blue_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-shield-alt me-1"></i>View Remediation
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('red_team', scan_id=scan.id) }}#vuln-{{ vuln.id }}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-user-secret me-1"></i>View Exploitation
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not results %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>No vulnerabilities were detected in this scan.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart-config.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Vulnerability summary chart
+        const summaryData = {
+            labels: ['Critical', 'High', 'Medium', 'Low'],
+            datasets: [{
+                data: [
+                    {{ vulnerabilities_by_severity['critical']|length }},
+                    {{ vulnerabilities_by_severity['high']|length }},
+                    {{ vulnerabilities_by_severity['medium']|length }},
+                    {{ vulnerabilities_by_severity['low']|length }}
+                ],
+                backgroundColor: ['#dc3545', '#fd7e14', '#0dcaf0', '#20c997']
+            }]
+        };
+        
+        createHorizontalBarChart('vulnerabilitySummaryChart', summaryData);
+    });
+</script>
+{% endblock %}

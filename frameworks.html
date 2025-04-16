@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}Security Frameworks{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">
+        <i class="fas fa-shield-alt text-primary me-2"></i>
+        Security Frameworks
+    </h1>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('view_scan', scan_id=scan.id) }}">Scan Results</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Security Frameworks</li>
+        </ol>
+    </nav>
+
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        Select a security framework to generate a compliance report for this scan.
+    </div>
+
+    <div class="row g-4">
+        {% for framework in frameworks %}
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ framework.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Version {{ framework.version }}</h6>
+                    <p class="card-text">{{ framework.description }}</p>
+                    {% if framework.website %}
+                    <a href="{{ framework.website }}" target="_blank" class="card-link text-decoration-none">
+                        <i class="fas fa-external-link-alt me-1"></i>Learn More
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{{ url_for('compliance_report', scan_id=scan.id, framework_id=framework.id) }}" class="btn btn-primary w-100">
+                        <i class="fas fa-clipboard-check me-2"></i>Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('view_scan', scan_id=scan.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Scan Results
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends "layout.html" %}
+
+{% block title %}Kali Toolkit{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i> Kali Linux Toolkit for Red/Blue Team Operations
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">Access popular Kali Linux tools for security assessment and defense.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> These commands simulate popular Kali Linux tools. They provide educational information about each tool's purpose and typical usage.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Red Team Section -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-skull-crossbones me-2"></i> Red Team Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-map me-2"></i>Nmap</h5>
+                            <small class="text-muted">Network mapping</small>
+                        </div>
+                        <p class="mb-1">Network scanning and host discovery tool.</p>
+                        <small class="text-muted code-sample">nmap -sV -p1-65535 [target]</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-key me-2"></i>Metasploit</h5>
+                            <small class="text-muted">Exploitation</small>
+                        </div>
+                        <p class="mb-1">Advanced open-source platform for developing, testing, and executing exploits.</p>
+                        <small class="text-muted code-sample">msfconsole</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-user-secret me-2"></i>Burp Suite</h5>
+                            <small class="text-muted">Web assessment</small>
+                        </div>
+                        <p class="mb-1">Web vulnerability scanner and intercepting proxy.</p>
+                        <small class="text-muted code-sample">burpsuite</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-wifi me-2"></i>Aircrack-ng</h5>
+                            <small class="text-muted">Wireless audit</small>
+                        </div>
+                        <p class="mb-1">Suite for wireless network security assessment.</p>
+                        <small class="text-muted code-sample">aircrack-ng [options] &lt;capture file(s)&gt;</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-file-code me-2"></i>SQLmap</h5>
+                            <small class="text-muted">SQL injection</small>
+                        </div>
+                        <p class="mb-1">Automated SQL injection and database takeover tool.</p>
+                        <small class="text-muted code-sample">sqlmap -u "http://example.com/page.php?id=1" --dbs</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blue Team Section -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-shield-alt me-2"></i> Blue Team Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-file-archive me-2"></i>Volatility</h5>
+                            <small class="text-muted">Memory forensics</small>
+                        </div>
+                        <p class="mb-1">Advanced memory forensics framework.</p>
+                        <small class="text-muted code-sample">volatility -f memory.dump imageinfo</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-search me-2"></i>Wireshark</h5>
+                            <small class="text-muted">Network analysis</small>
+                        </div>
+                        <p class="mb-1">Network protocol analyzer for network troubleshooting and analysis.</p>
+                        <small class="text-muted code-sample">wireshark</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-file-alt me-2"></i>OSSEC</h5>
+                            <small class="text-muted">Host-based IDS</small>
+                        </div>
+                        <p class="mb-1">Host-based Intrusion Detection System (HIDS).</p>
+                        <small class="text-muted code-sample">ossec-control start</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-binoculars me-2"></i>Snort</h5>
+                            <small class="text-muted">Network IDS/IPS</small>
+                        </div>
+                        <p class="mb-1">Network intrusion prevention and detection system.</p>
+                        <small class="text-muted code-sample">snort -dev -l ./log -h 192.168.1.0/24</small>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1"><i class="fas fa-laptop-code me-2"></i>Lynis</h5>
+                            <small class="text-muted">Security auditing</small>
+                        </div>
+                        <p class="mb-1">Security auditing and hardening tool for Unix/Linux systems.</p>
+                        <small class="text-muted code-sample">lynis audit system</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Terminal Section -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-terminal me-2"></i> Tool Lookup
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="toolSearch" class="form-label">Search for a security tool:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="toolSearch" placeholder="Enter tool name (e.g., nmap, wireshark, metasploit)">
+                        <button class="btn btn-primary" id="searchButton" type="button">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3 d-none" id="toolInfoContainer">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0" id="toolName">Tool Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <h6>Description:</h6>
+                                <p id="toolDescription"></p>
+                            </div>
+                            <div class="mb-2">
+                                <h6>Common Usage:</h6>
+                                <pre class="bg-dark text-light p-2 rounded"><code id="toolUsage"></code></pre>
+                            </div>
+                            <div>
+                                <h6>Security Category:</h6>
+                                <span class="badge bg-primary" id="toolCategory"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toolSearch = document.getElementById('toolSearch');
+        const searchButton = document.getElementById('searchButton');
+        const toolInfoContainer = document.getElementById('toolInfoContainer');
+        const toolName = document.getElementById('toolName');
+        const toolDescription = document.getElementById('toolDescription');
+        const toolUsage = document.getElementById('toolUsage');
+        const toolCategory = document.getElementById('toolCategory');
+        
+        // Tool information database
+        const toolDatabase = {
+            'nmap': {
+                name: 'Nmap (Network Mapper)',
+                description: 'Open source utility for network discovery and security auditing. It uses raw IP packets to determine what hosts are available on the network, what services they are offering, what operating systems they are running, what type of packet filters/firewalls are in use, and more.',
+                usage: 'nmap -sV -p 1-1000 192.168.1.1\nnmap -sS -A 10.0.0.0/24',
+                category: 'Network Scanning'
+            },
+            'metasploit': {
+                name: 'Metasploit Framework',
+                description: 'Advanced open-source platform for developing, testing, and executing exploits against remote targets. It provides a robust infrastructure, payload generation, and post-exploitation capabilities.',
+                usage: 'msfconsole\nuse exploit/windows/smb/ms17_010_eternalblue\nset RHOSTS 192.168.1.10\nexploit',
+                category: 'Exploitation'
+            },
+            'wireshark': {
+                name: 'Wireshark',
+                description: 'Network protocol analyzer that lets you capture and interactively browse the traffic running on a computer network. It has a rich feature set including deep inspection of hundreds of protocols, live capture and offline analysis.',
+                usage: 'wireshark -i eth0\ntshark -r capture.pcap -Y "http.request.method == GET"',
+                category: 'Network Analysis'
+            },
+            'burpsuite': {
+                name: 'Burp Suite',
+                description: 'Integrated platform for performing security testing of web applications. Its various tools work seamlessly together to support the entire testing process, from initial mapping and analysis of an application's attack surface, through to finding and exploiting security vulnerabilities.',
+                usage: 'burpsuite\n# Set proxy in browser to 127.0.0.1:8080',
+                category: 'Web Application Security'
+            },
+            'sqlmap': {
+                name: 'SQLMap',
+                description: 'Open source penetration testing tool that automates the process of detecting and exploiting SQL injection flaws and taking over database servers. It comes with a powerful detection engine, many niche features for the ultimate penetration tester.',
+                usage: 'sqlmap -u "http://example.com/page.php?id=1" --dbs\nsqlmap -u "http://example.com/page.php?id=1" --dump',
+                category: 'SQL Injection'
+            },
+            'aircrack-ng': {
+                name: 'Aircrack-ng',
+                description: 'Network software suite consisting of a detector, packet sniffer, WEP and WPA/WPA2-PSK cracker and analysis tool for 802.11 wireless LANs. It works with any wireless network interface controller whose driver supports raw monitoring mode.',
+                usage: 'airmon-ng start wlan0\nairodump-ng wlan0mon\naircrack-ng -w wordlist.txt capture.cap',
+                category: 'Wireless Security'
+            },
+            'john': {
+                name: 'John the Ripper',
+                description: 'Fast password cracker, currently available for many flavors of Unix, macOS, Windows, and other operating systems. Its primary purpose is to detect weak Unix passwords, but it supports various hash types and ciphers.',
+                usage: 'john --wordlist=passwords.txt hash.txt\njohn --format=raw-md5 hash.txt',
+                category: 'Password Cracking'
+            },
+            'hydra': {
+                name: 'Hydra',
+                description: 'Fast and flexible online password cracking tool that supports numerous protocols including FTP, HTTP, HTTPS, SMB, SSH, and more. It can perform rapid dictionary attacks against more than 50 protocols.',
+                usage: 'hydra -l admin -P wordlist.txt ftp://192.168.1.1\nhydra -L users.txt -P pass.txt ssh://192.168.0.1',
+                category: 'Brute Force'
+            },
+            'volatility': {
+                name: 'Volatility',
+                description: 'Advanced memory forensics framework for incident response and malware analysis. It can extract information from running Windows, Linux, and Mac systems about their state.',
+                usage: 'volatility -f memory.dump imageinfo\nvolatility -f memory.dump --profile=Win10x64 pslist',
+                category: 'Memory Forensics'
+            },
+            'lynis': {
+                name: 'Lynis',
+                description: 'Security auditing tool for Unix/Linux systems. It performs an in-depth security scan on the system to detect security issues and provide suggestions for hardening.',
+                usage: 'lynis audit system\nlynis --pentest',
+                category: 'System Auditing'
+            },
+            'snort': {
+                name: 'Snort',
+                description: 'Network intrusion prevention and detection system utilizing a rule-based language which combines the benefits of signature, protocol, and anomaly-based inspection methods.',
+                usage: 'snort -dev -l ./log -h 192.168.1.0/24\nsnort -c /etc/snort/snort.conf -A console',
+                category: 'Network IDS/IPS'
+            },
+            'ossec': {
+                name: 'OSSEC',
+                description: 'Host-based Intrusion Detection System (HIDS) that performs log analysis, file integrity checking, policy monitoring, rootkit detection, real-time alerting and active response.',
+                usage: 'ossec-control start\n/var/ossec/bin/agent_control -l',
+                category: 'Host-based IDS'
+            }
+        };
+        
+        // Handle search
+        function searchTool() {
+            const query = toolSearch.value.trim().toLowerCase();
+            
+            if (query in toolDatabase) {
+                // Show tool information
+                const tool = toolDatabase[query];
+                toolName.textContent = tool.name;
+                toolDescription.textContent = tool.description;
+                toolUsage.textContent = tool.usage;
+                toolCategory.textContent = tool.category;
+                toolInfoContainer.classList.remove('d-none');
+            } else if (query === '') {
+                toolInfoContainer.classList.add('d-none');
+            } else {
+                // Tool not found
+                toolName.textContent = 'Tool Not Found';
+                toolDescription.textContent = `Sorry, we don't have information about "${query}" in our database.`;
+                toolUsage.textContent = '';
+                toolCategory.textContent = 'Unknown';
+                toolInfoContainer.classList.remove('d-none');
+            }
+        }
+        
+        // Event listeners
+        searchButton.addEventListener('click', searchTool);
+        
+        toolSearch.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchTool();
+            }
+        });
+        
+        // Add style for code samples
+        const codeStyle = document.createElement('style');
+        codeStyle.textContent = `
+            .code-sample {
+                display: block;
+                font-family: monospace;
+                background-color: #2c2c2c;
+                color: #e0e0e0;
+                padding: 5px 10px;
+                border-radius: 4px;
+                margin-top: 5px;
+                white-space: pre;
+            }
+        `;
+        document.head.appendChild(codeStyle);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends "layout.html" %}
+
+{% block title %}Compliance Report - {{ framework.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">
+        <i class="fas fa-clipboard-check text-primary me-2"></i>
+        Compliance Report
+    </h1>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('view_scan', scan_id=scan.id) }}">Scan Results</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Compliance Report</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Scan Details</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Target:</th>
+                            <td>{{ scan.target }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type:</th>
+                            <td>{{ scan.scan_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date:</th>
+                            <td>{{ scan.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Framework Details</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Framework:</th>
+                            <td>{{ framework.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Version:</th>
+                            <td>{{ framework.version }}</td>
+                        </tr>
+                        {% if framework.website %}
+                        <tr>
+                            <th>Website:</th>
+                            <td><a href="{{ framework.website }}" target="_blank">{{ framework.website }}</a></td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h4 class="card-title">Compliance Summary</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="text-center mb-3">
+                        <div class="display-4 fw-bold">{{ "%.1f"|format(report.compliance_score) }}%</div>
+                        <p class="text-muted">Overall Compliance Score</p>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar 
+                            {% if report.compliance_score < 50 %}bg-danger
+                            {% elif report.compliance_score < 80 %}bg-warning
+                            {% else %}bg-success{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ report.compliance_score }}%;"
+                            aria-valuenow="{{ report.compliance_score }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                            {{ "%.1f"|format(report.compliance_score) }}%
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="complianceChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h4 class="card-title mb-3">Control Compliance Details</h4>
+            
+            <ul class="nav nav-tabs mb-3" id="controlTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                        All Controls
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="addressed-tab" data-bs-toggle="tab" data-bs-target="#addressed" type="button" role="tab" aria-controls="addressed" aria-selected="false">
+                        Addressed Controls
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="unaddressed-tab" data-bs-toggle="tab" data-bs-target="#unaddressed" type="button" role="tab" aria-controls="unaddressed" aria-selected="false">
+                        Unaddressed Controls
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="controlTabsContent">
+                <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                    {% for control in detailed_results.controls %}
+                    <div class="card mb-3 {% if control.vulnerabilities|length > 0 %}border-success{% else %}border-danger{% endif %}">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>
+                                <strong>{{ control.control_id }}</strong> - {{ control.name }}
+                            </span>
+                            <span class="badge 
+                                {% if control.severity == 'critical' %}bg-danger
+                                {% elif control.severity == 'high' %}bg-warning
+                                {% elif control.severity == 'medium' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ control.severity|capitalize }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ control.description }}</p>
+                            
+                            <div class="mt-3">
+                                <h6>Status: 
+                                    {% if control.vulnerabilities|length > 0 %}
+                                    <span class="badge bg-success">Addressed</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Not Addressed</span>
+                                    {% endif %}
+                                </h6>
+                                
+                                {% if control.vulnerabilities|length > 0 %}
+                                <h6 class="mt-3">Mapped Vulnerabilities:</h6>
+                                <ul class="list-group">
+                                    {% for vuln in control.vulnerabilities %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ vuln.vulnerability_type|replace('_', ' ')|title }}</strong>
+                                            <p class="mb-0 text-muted">{{ vuln.description }}</p>
+                                        </div>
+                                        <span class="badge 
+                                            {% if vuln.severity == 'critical' %}bg-danger
+                                            {% elif vuln.severity == 'high' %}bg-warning
+                                            {% elif vuln.severity == 'medium' %}bg-info
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ vuln.severity|capitalize }}
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="tab-pane fade" id="addressed" role="tabpanel" aria-labelledby="addressed-tab">
+                    {% for control in detailed_results.controls %}
+                    {% if control.vulnerabilities|length > 0 %}
+                    <div class="card mb-3 border-success">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>
+                                <strong>{{ control.control_id }}</strong> - {{ control.name }}
+                            </span>
+                            <span class="badge 
+                                {% if control.severity == 'critical' %}bg-danger
+                                {% elif control.severity == 'high' %}bg-warning
+                                {% elif control.severity == 'medium' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ control.severity|capitalize }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ control.description }}</p>
+                            
+                            <div class="mt-3">
+                                <h6>Status: <span class="badge bg-success">Addressed</span></h6>
+                                
+                                <h6 class="mt-3">Mapped Vulnerabilities:</h6>
+                                <ul class="list-group">
+                                    {% for vuln in control.vulnerabilities %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ vuln.vulnerability_type|replace('_', ' ')|title }}</strong>
+                                            <p class="mb-0 text-muted">{{ vuln.description }}</p>
+                                        </div>
+                                        <span class="badge 
+                                            {% if vuln.severity == 'critical' %}bg-danger
+                                            {% elif vuln.severity == 'high' %}bg-warning
+                                            {% elif vuln.severity == 'medium' %}bg-info
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ vuln.severity|capitalize }}
+                                        </span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="tab-pane fade" id="unaddressed" role="tabpanel" aria-labelledby="unaddressed-tab">
+                    {% for control in detailed_results.controls %}
+                    {% if control.vulnerabilities|length == 0 %}
+                    <div class="card mb-3 border-danger">
+                        <div class="card-header d-flex justify-content-between">
+                            <span>
+                                <strong>{{ control.control_id }}</strong> - {{ control.name }}
+                            </span>
+                            <span class="badge 
+                                {% if control.severity == 'critical' %}bg-danger
+                                {% elif control.severity == 'high' %}bg-warning
+                                {% elif control.severity == 'medium' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ control.severity|capitalize }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ control.description }}</p>
+                            
+                            <div class="mt-3">
+                                <h6>Status: <span class="badge bg-danger">Not Addressed</span></h6>
+                                <p class="text-muted">No vulnerabilities in this scan map to this control.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{{ url_for('view_scan', scan_id=scan.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Scan Results
+        </a>
+        <a href="{{ url_for('export_compliance_report', scan_id=scan.id, framework_id=framework.id, format='pdf') }}" class="btn btn-primary">
+            <i class="fas fa-file-pdf me-2"></i>Export as PDF
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Compliance chart
+    const ctx = document.getElementById('complianceChart').getContext('2d');
+    const complianceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Addressed', 'Not Addressed'],
+            datasets: [{
+                data: [
+                    {{ detailed_results.summary.addressed_controls }}, 
+                    {{ detailed_results.summary.total_controls - detailed_results.summary.addressed_controls }}
+                ],
+                backgroundColor: [
+                    '#198754', // Success color
+                    '#dc3545'  // Danger color
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = {{ detailed_results.summary.total_controls }};
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

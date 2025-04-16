@@ -1,0 +1,247 @@
+/* 
+   Custom CSS for C2 Security Platform
+   Enhances the Bootstrap dark theme with custom styling
+*/
+
+:root {
+    --bs-primary-rgb: 13, 110, 253;
+    --bs-danger-rgb: 220, 53, 69;
+    --bs-success-rgb: 25, 135, 84;
+    --bs-warning-rgb: 255, 193, 7;
+    --bs-info-rgb: 13, 202, 240;
+    --bs-body-bg: #212529;
+    --bs-body-color: #f8f9fa;
+}
+
+/* General Layout Improvements */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+.container {
+    max-width: 1400px;
+}
+
+/* Card Enhancements */
+.card {
+    transition: transform 0.2s;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+/* Navbar Customization */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+    font-weight: 700;
+}
+
+/* Button Styles */
+.btn {
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+.btn-primary, .btn-success, .btn-danger, .btn-warning, .btn-info {
+    padding: 0.5rem 1.2rem;
+}
+
+/* Badge Styles */
+.badge {
+    padding: 6px 10px;
+    font-weight: 500;
+    border-radius: 4px;
+}
+
+/* Form Controls */
+.form-control, .input-group-text {
+    border-radius: 5px;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Progress Bar */
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Alert Customization */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Pre and Code Blocks */
+pre {
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+code {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+/* Dashboard-specific styles */
+.scan-status-badge {
+    min-width: 90px;
+    text-align: center;
+}
+
+/* Vulnerability report styles */
+.vulnerability-card {
+    border-left: 4px solid transparent;
+}
+
+.vulnerability-card.critical {
+    border-left-color: var(--bs-danger);
+}
+
+.vulnerability-card.high {
+    border-left-color: var(--bs-warning);
+}
+
+.vulnerability-card.medium {
+    border-left-color: var(--bs-info);
+}
+
+.vulnerability-card.low {
+    border-left-color: var(--bs-success);
+}
+
+.remediation-content, .exploitation-content {
+    white-space: pre-line;
+}
+
+/* Accordion Customization */
+.accordion-button:not(.collapsed) {
+    color: var(--bs-body-color);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Breadcrumb */
+.breadcrumb-item.active {
+    color: rgba(var(--bs-body-color), 0.75);
+}
+
+/* Custom Icons */
+.icon-large {
+    font-size: 2.5rem;
+}
+
+.icon-medium {
+    font-size: 1.5rem;
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+.pulse {
+    animation: pulse 1.5s infinite;
+}
+
+/* Tooltip customization */
+.tooltip .tooltip-inner {
+    background-color: var(--bs-dark);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Custom scrollbar for pre tags */
+pre::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+pre::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Kali Toolkit styles */
+.code-sample {
+    display: block;
+    font-family: monospace;
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-top: 5px;
+    white-space: pre;
+}
+
+.tool-card:hover {
+    border-color: var(--bs-primary);
+}
+
+/* Terminal-style code */
+pre.terminal {
+    background-color: #1e1e1e;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #333;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .display-1 {
+        font-size: 3.5rem;
+    }
+    
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}

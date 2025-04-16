@@ -1,0 +1,443 @@
+{% extends "layout.html" %}
+
+{% block title %}Blue Team Analysis{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>
+            <i class="fas fa-shield-alt text-primary me-2"></i>Blue Team Analysis
+        </h1>
+        <div class="btn-group">
+            <a href="{{ url_for('view_scan', scan_id=scan.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-file-alt me-1"></i> Standard Report
+            </a>
+            <a href="{{ url_for('red_team', scan_id=scan.id) }}" class="btn btn-outline-danger">
+                <i class="fas fa-user-secret me-1"></i> Red Team View
+            </a>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i> Export
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='pdf') }}">Export as PDF</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_report', scan_id=scan.id, format='csv') }}">Export as CSV</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Blue Team Introduction -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Defensive Security Report</h4>
+    </div>
+    <div class="card-body">
+        <p>
+            This report provides a defensive security analysis for <strong>{{ scan.target }}</strong>. 
+            It highlights security issues, provides detailed remediation steps, and offers implementation guidance 
+            for security improvements.
+        </p>
+        <div class="alert alert-info">
+            <i class="fas fa-lightbulb me-2"></i> <strong>Recommendation:</strong> 
+            Address the vulnerabilities in order of severity (Critical → High → Medium → Low).
+        </div>
+    </div>
+</div>
+
+<!-- Security Scorecard -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Security Scorecard</h4>
+    </div>
+    <div class="card-body">
+        {% set critical_count = results|selectattr('severity', 'equalto', 'critical')|list|length %}
+        {% set high_count = results|selectattr('severity', 'equalto', 'high')|list|length %}
+        {% set medium_count = results|selectattr('severity', 'equalto', 'medium')|list|length %}
+        {% set low_count = results|selectattr('severity', 'equalto', 'low')|list|length %}
+        {% set total_count = results|length %}
+        
+        {% set max_score = total_count * 10 %}
+        {% set actual_score = total_count * 10 - (critical_count * 10 + high_count * 7 + medium_count * 4 + low_count * 1) %}
+        {% set percentage = (actual_score / max_score * 100)|int if max_score > 0 else 100 %}
+        
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <div class="display-4 fw-bold mb-0 
+                    {% if percentage >= 90 %}text-success
+                    {% elif percentage >= 70 %}text-info
+                    {% elif percentage >= 50 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ percentage }}%
+                </div>
+                <div class="text-muted">Security Score</div>
+            </div>
+            <div class="col-md-9">
+                <h5>Security Ratings by Category</h5>
+                <div class="mb-3">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Configuration Security</span>
+                        <span class="text-muted">
+                            {% set config_issues = results|selectattr('vulnerability_type', 'search', 'missing_|config|header|certificate')|list|length %}
+                            {% if config_issues > 5 %}F
+                            {% elif config_issues > 3 %}D
+                            {% elif config_issues > 2 %}C
+                            {% elif config_issues > 0 %}B
+                            {% else %}A{% endif %}
+                        </span>
+                    </label>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ 100 - config_issues * 15 if config_issues < 7 else 5 }}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Application Security</span>
+                        <span class="text-muted">
+                            {% set app_issues = results|selectattr('vulnerability_type', 'search', 'xss|csrf|sql|injection')|list|length %}
+                            {% if app_issues > 3 %}F
+                            {% elif app_issues > 2 %}D
+                            {% elif app_issues > 1 %}C
+                            {% elif app_issues > 0 %}B
+                            {% else %}A{% endif %}
+                        </span>
+                    </label>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ 100 - app_issues * 25 if app_issues < 4 else 5 }}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-flex justify-content-between">
+                        <span>Infrastructure Security</span>
+                        <span class="text-muted">
+                            {% set infra_issues = results|selectattr('vulnerability_type', 'search', 'open_port|service|ssl|tls')|list|length %}
+                            {% if infra_issues > 7 %}F
+                            {% elif infra_issues > 5 %}D
+                            {% elif infra_issues > 3 %}C
+                            {% elif infra_issues > 0 %}B
+                            {% else %}A{% endif %}
+                        </span>
+                    </label>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ 100 - infra_issues * 12 if infra_issues < 9 else 5 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Priority Remediation -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Priority Remediation Plan</h4>
+    </div>
+    <div class="card-body">
+        {% if results %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Vulnerability</th>
+                        <th>Severity</th>
+                        <th>Remediation Effort</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results|sort(attribute='severity', reverse=true) %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <a href="#vuln-{{ result.id }}">
+                                {{ result.vulnerability_type.replace('_', ' ').title() }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if result.severity == 'critical' %}
+                            <span class="badge bg-danger">Critical</span>
+                            {% elif result.severity == 'high' %}
+                            <span class="badge bg-warning text-dark">High</span>
+                            {% elif result.severity == 'medium' %}
+                            <span class="badge bg-info">Medium</span>
+                            {% else %}
+                            <span class="badge bg-success">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set effort = {'server_info_disclosure': 'Low', 'missing_strict_transport_security': 'Low', 'missing_content_security_policy': 'Medium', 'missing_x_content_type_options': 'Low', 'missing_x_frame_options': 'Low', 'missing_x_xss_protection': 'Low', 'potential_xss': 'Medium', 'potential_sqli': 'Medium', 'csrf_vulnerability': 'Low', 'directory_listing': 'Low', 'expired_ssl_cert': 'Low', 'self_signed_cert': 'Low'} %}
+                            
+                            {% if effort[result.vulnerability_type] %}
+                            <span class="badge
+                                {% if effort[result.vulnerability_type] == 'Low' %}bg-success{% elif effort[result.vulnerability_type] == 'Medium' %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                                {{ effort[result.vulnerability_type] }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">Medium</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set impact = {'server_info_disclosure': 'Low', 'insecure_http': 'High', 'potential_xss': 'High', 'potential_sqli': 'Critical', 'csrf_vulnerability': 'High', 'sensitive_file_exposure': 'High', 'header_inconsistency': 'Medium', 'authentication_failure': 'High'} %}
+                            
+                            {% if impact[result.vulnerability_type] %}
+                            <span class="badge
+                                {% if impact[result.vulnerability_type] == 'Low' %}bg-success{% elif impact[result.vulnerability_type] == 'Medium' %}bg-info{% elif impact[result.vulnerability_type] == 'High' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ impact[result.vulnerability_type] }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">Medium</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>No vulnerabilities were found that require remediation.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Detailed Remediations -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h4 class="mb-0">Detailed Remediation Instructions</h4>
+    </div>
+    <div class="card-body p-0">
+        {% if results %}
+        <div class="list-group list-group-flush">
+            {% for result in results|sort(attribute='severity', reverse=true) %}
+            <div class="list-group-item p-4" id="vuln-{{ result.id }}">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        {% if result.severity == 'critical' %}
+                        <span class="badge bg-danger me-2">Critical</span>
+                        {% elif result.severity == 'high' %}
+                        <span class="badge bg-warning text-dark me-2">High</span>
+                        {% elif result.severity == 'medium' %}
+                        <span class="badge bg-info me-2">Medium</span>
+                        {% else %}
+                        <span class="badge bg-success me-2">Low</span>
+                        {% endif %}
+                        {{ result.vulnerability_type.replace('_', ' ').title() }}
+                    </h5>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p>{{ result.description }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Issue Details:</strong>
+                    <pre class="bg-dark text-white p-3 rounded">{{ result.details }}</pre>
+                </div>
+                
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Remediation Steps</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="remediation-content">
+                            {{ result.remediation|safe|replace('\n', '<br>') }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Implementation Examples -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-code me-2"></i>Implementation Examples</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if result.vulnerability_type == 'server_info_disclosure' %}
+                        <div class="mb-3">
+                            <h6>Apache Configuration</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to httpd.conf or .htaccess
+ServerTokens Prod
+ServerSignature Off</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Nginx Configuration</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to nginx.conf in the http or server block
+server_tokens off;</pre>
+                        </div>
+                        {% elif result.vulnerability_type.startswith('missing_') and 'header' in result.vulnerability_type %}
+                        <div class="mb-3">
+                            <h6>Apache Configuration</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to httpd.conf or .htaccess
+{% if 'strict_transport_security' in result.vulnerability_type %}
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+{% elif 'content_security_policy' in result.vulnerability_type %}
+Header set Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'"
+{% elif 'x_content_type_options' in result.vulnerability_type %}
+Header set X-Content-Type-Options "nosniff"
+{% elif 'x_frame_options' in result.vulnerability_type %}
+Header set X-Frame-Options "SAMEORIGIN"
+{% elif 'x_xss_protection' in result.vulnerability_type %}
+Header set X-XSS-Protection "1; mode=block"
+{% endif %}</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Nginx Configuration</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to nginx.conf in the server block
+{% if 'strict_transport_security' in result.vulnerability_type %}
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+{% elif 'content_security_policy' in result.vulnerability_type %}
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; object-src 'none'" always;
+{% elif 'x_content_type_options' in result.vulnerability_type %}
+add_header X-Content-Type-Options "nosniff" always;
+{% elif 'x_frame_options' in result.vulnerability_type %}
+add_header X-Frame-Options "SAMEORIGIN" always;
+{% elif 'x_xss_protection' in result.vulnerability_type %}
+add_header X-XSS-Protection "1; mode=block" always;
+{% endif %}</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'potential_xss' %}
+                        <div class="mb-3">
+                            <h6>Input Validation (JavaScript)</h6>
+                            <pre class="bg-dark text-white p-2 rounded">// Client-side input validation
+function validateInput(input) {
+  // Remove potentially dangerous characters
+  return input.replace(/[<>&"']/g, function(match) {
+    return {
+      '<': '&lt;',
+      '>': '&gt;',
+      '&': '&amp;',
+      '"': '&quot;',
+      "'": '&#x27;'
+    }[match];
+  });
+}</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Output Encoding (Python)</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Server-side output encoding
+import html
+
+def safe_output(user_input):
+    return html.escape(user_input)</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'potential_sqli' %}
+                        <div class="mb-3">
+                            <h6>Using Parameterized Queries (Python)</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Unsafe code
+query = "SELECT * FROM users WHERE username = '" + username + "'"
+
+# Safe code using parameterized query
+cursor.execute("SELECT * FROM users WHERE username = %s", (username,))</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Using an ORM (SQLAlchemy)</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Using SQLAlchemy ORM
+user = User.query.filter_by(username=username).first()</pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'csrf_vulnerability' %}
+                        <div class="mb-3">
+                            <h6>Using CSRF Tokens (Flask)</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Flask with Flask-WTF
+from flask_wtf.csrf import CSRFProtect
+
+csrf = CSRFProtect(app)
+
+# In template:
+# <form method="post">
+#     {{ csrf_token() }}
+#     ...
+# </form></pre>
+                        </div>
+                        {% elif result.vulnerability_type == 'directory_listing' %}
+                        <div class="mb-3">
+                            <h6>Disable Directory Listing in Apache</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to httpd.conf or .htaccess
+Options -Indexes</pre>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Disable Directory Listing in Nginx</h6>
+                            <pre class="bg-dark text-white p-2 rounded"># Add to server block
+autoindex off;</pre>
+                        </div>
+                        {% else %}
+                        <p>Refer to the detailed remediation steps above for implementation guidance specific to this vulnerability.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Testing & Verification -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Verification Methods</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>After implementing the remediation, verify the fix using these methods:</p>
+                        
+                        {% if result.vulnerability_type.startswith('missing_') and 'header' in result.vulnerability_type %}
+                        <div class="mb-3">
+                            <h6>Verify Security Headers</h6>
+                            <pre class="bg-dark text-white p-2 rounded">curl -I https://{{ scan.target }}</pre>
+                            <p>Look for the presence of the specific security header in the response.</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Online Tools</h6>
+                            <ul>
+                                <li>Use <a href="https://securityheaders.com" target="_blank">SecurityHeaders.com</a> to scan your website</li>
+                                <li>Use <a href="https://observatory.mozilla.org" target="_blank">Mozilla Observatory</a> for a comprehensive check</li>
+                            </ul>
+                        </div>
+                        {% elif result.vulnerability_type == 'potential_xss' %}
+                        <div class="mb-3">
+                            <h6>Testing for XSS</h6>
+                            <ol>
+                                <li>Enter test payloads like <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> in form fields</li>
+                                <li>Verify that the script does not execute after remediation</li>
+                                <li>Check that the input is properly escaped or sanitized</li>
+                            </ol>
+                        </div>
+                        {% elif result.vulnerability_type == 'potential_sqli' %}
+                        <div class="mb-3">
+                            <h6>Testing for SQL Injection</h6>
+                            <ol>
+                                <li>Enter test payloads like <code>' OR 1=1 --</code> in input fields</li>
+                                <li>Verify that the application handles the input securely</li>
+                                <li>Check that parameterized queries are being used</li>
+                            </ol>
+                        </div>
+                        {% elif result.vulnerability_type == 'csrf_vulnerability' %}
+                        <div class="mb-3">
+                            <h6>Testing for CSRF Protection</h6>
+                            <ol>
+                                <li>Inspect the HTML forms and verify they include CSRF tokens</li>
+                                <li>Try submitting a form with a missing or invalid CSRF token</li>
+                                <li>Verify that the submission is rejected</li>
+                            </ol>
+                        </div>
+                        {% else %}
+                        <p>Use appropriate testing methods for this vulnerability type as described in the remediation section.</p>
+                        {% endif %}
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Consider running another scan after implementing fixes to verify the vulnerabilities have been addressed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-success m-3">
+            <i class="fas fa-check-circle me-2"></i>No vulnerabilities were found that require remediation.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

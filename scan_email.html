@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+
+{% block title %}Email Security Scan{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h3 class="mb-0"><i class="fas fa-envelope me-2 text-success"></i>Email Security Analysis</h3>
+            </div>
+            <div class="card-body p-4">
+                <p class="lead mb-4">
+                    Analyze email addresses or raw email content for security issues, configuration problems, and phishing indicators.
+                </p>
+                
+                <form method="POST" action="{{ url_for('scan_email_route') }}">
+                    <div class="mb-4">
+                        <label for="target_email" class="form-label">Email Address or Raw Email Content</label>
+                        <textarea class="form-control" id="target_email" name="target_email" rows="6" 
+                            placeholder="Enter an email address (e.g., user@example.com) or paste the full raw email content including headers" required></textarea>
+                        <div class="form-text">
+                            You can provide either a single email address to check domain configurations or paste a complete email (including headers) to analyze for security issues.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label d-block">Analysis Options</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="scan_headers" name="scan_headers" checked>
+                            <label class="form-check-label" for="scan_headers">
+                                Scan Email Headers
+                            </label>
+                            <div class="form-text">
+                                Analyze email headers for inconsistencies and security issues
+                            </div>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="check_spf_dkim" name="check_spf_dkim" checked>
+                            <label class="form-check-label" for="check_spf_dkim">
+                                Check SPF/DKIM/DMARC Records
+                            </label>
+                            <div class="form-text">
+                                Verify domain email authentication configurations
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check_phishing" name="check_phishing" checked>
+                            <label class="form-check-label" for="check_phishing">
+                                Check for Phishing Indicators
+                            </label>
+                            <div class="form-text">
+                                Analyze content for common phishing techniques and suspicious elements
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-search me-2"></i>Start Email Analysis
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-transparent">
+                <h4 class="mb-0">Email Security Checks</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Email Domain Analysis</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>SPF Record Configuration</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>DKIM Record Verification</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>DMARC Policy Check</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>MX Record Validation</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Email Content Analysis</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Header Consistency Check</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Phishing Indicators</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Suspicious Links Detection</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Malicious Attachment Check</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
